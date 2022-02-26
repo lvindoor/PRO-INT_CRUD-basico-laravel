@@ -1,0 +1,424 @@
+Crear proyecto:
+	composer create-project laravel/laravel example-app
+	cd example-app
+Ejecutar:
+	composer install
+Crear archivo de configuracion de pruebas:
+	cp .env.example .env
+Instalar en VSCode 'Laravel Extension Pack'
+Generar API Key (Se genera en el archivo .env):
+	php artisan key:generate
+Generamos una nueva ruta en /routes/web.php:
+    Route::get('/recordings/{name}/{year?}', function ($name, $year = null) {
+        return view('pages.recordings', compact('name', 'year'));
+    });
+Creamos la vista en /resources/views/pages/nombrearchivo.blade.php:
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Grabaciones</title>
+    </head>
+    <body>
+        <h1>Grabaciones de {{$name}}</h1>
+        <h2>
+            @if(isset($year))
+                Año {{$year}}
+            @else
+                Todo los Años
+            @endif
+        </h2>
+    </body>
+    </html>
+Prueba la API como (Ambas deben funcionar): 
+	http://example-app.test/recordings/Jesus Alejandro/2022
+	http://example-app.test/recordings/Jesus Alejandro
+
+Creamos una base de datos para el proyecto (Usar terminal):
+	mysql -uroot
+	show databases;
+	CREATE DATABASE `db_example-app`;
+Cambiar la configuracion de la base de datos en .env:
+	DB_CONNECTION=mysql
+	DB_HOST=127.0.0.1
+	DB_PORT=3306
+	DB_DATABASE=db_example-app
+	DB_USERNAME=root
+	DB_PASSWORD=
+Crear la tabla en base y respaldarlo en /databases/migrations (usar terminal):
+	php artisan make:migration create_videos_table
+	(Se genera en automatico un archivo en /databases/migrations)
+	(Eliminamos los demas archivos en /databases/migrations)
+Entramos al archivo dentro de /databases/migrations y creamos campos:
+	Referencia: https://laravel.com/docs/9.x/migrations	
+	Archivo:
+	    public function up() {
+                Schema::create('videos', function (Blueprint $table) {
+                    $table->id();
+                    $table->string('class', 100);
+                    $table->string('theme', 150);
+                    $table->string('duration', 50);
+                    $table->string('size', 100);
+                    $table->timestamps();
+                });
+            }
+Ejecutamos la migración:
+	php artisan migrate:install (Este comando crea la tabla de historial de migraciones)
+	php artisan migrate (Este comando crea las tablas)
+Podemos revisar en mysql los cambios:
+	mysql -uroot -- Iniciamos otra terminal para revisar la base de datos
+	use `db_example-app`; -- Nos movemos a nuestra base de datos
+	show tables; -- Muestra todas las tablas
+	describe videos; -- Observamos los campos creados de la tabla
+	select * from migrations; -- Muestra las migraciones realizadas
+Modificamos la migracion de videos en /databases/migrations:
+	Archivo:
+            public function up()
+            {
+                Schema::create('videos', function (Blueprint $table) {
+                    $table->id();
+                    $table->string('class', 100);
+                    $table->string('theme', 150);
+                    $table->string('duration', 50);
+                    $table->string('size', 100);
+                    $table->date('broadcast_date');
+                });
+            }
+Actualizamos la tabla:
+	php artisan migrate:rollback
+	php artisan migrate
+Crear un seeder para una clase Videos (Se crea en /database/seeder):
+	Referencia: https://laravel.com/docs/9.x/seeding
+	php artisan make:seeder VideosSeeder
+Insertamos datos de prueba en el seeder (/database/seeder/VideosSeeder.php):
+	Agregar metodo al archivo:
+	    public function run()
+            {
+                DB::table('videos')->insert([
+                    'class' => 'Programacion para Internet',
+                    'theme' => 'CRUD Basico Laravel',
+                    'duration' => '5 horas',
+                    'size' => '1.5 GB',
+                    'broadcast_date' => now()
+                ]);
+            }
+Ejecutamos la insercion (terminal):
+	php artisan db:seed --class=VideosSeeder
+Revisamos en mysql:
+	mysql -uroot 
+	use `db_example-app`; 
+	select * from videos; 
+Creamos una ejecucion general para clases masivas (/database/seeder/DatabaseSeeder.php):
+	Agregar al metodo:
+	    public function run()
+            {
+                $this->call([
+                    VideosSeeder::class
+                ]);
+            }
+Mostramos ahora la tabla en nuestra ruta:
+	(Nos movemos a la ruta /routes/web.php)
+	Modificamos el metodo:
+            Route::get('/recordings/{name}/{year?}', function ($name, $year = null) {
+
+                if($year == null)
+                    $videos = DB::table('videos')->get();
+                else
+                    $videos = DB::table('videos')
+                                ->whereYear('broadcast_date', $year)
+                                ->get();
+
+                return view('pages.recordings', compact('name', 'year', 'videos'));
+            });
+	(Nos movemos a la ruta /resources/views/pages/recordings.blade.php)
+	Agregamos la tabla:
+	     <table class="table">
+                <tr>
+                    <th>Registro</th>
+                    <th>Clase</th>
+                    <th>Tema</th>
+                    <th>Duracion</th>
+                    <th>Tamaño</th>
+                    <th>Emision</th>
+                </tr>
+                @foreach ($videos as $video)
+                    <tr>
+                        <td>{{ $video->id }}</td>
+                        <td>{{ $video->class }}</td>
+                        <td>{{ $video->theme }}</td>
+                        <td>{{ $video->duration }}</td>
+                        <td>{{ $video->size }}</td>
+                        <td>{{ $video->broadcast_date }}</td>
+                    </tr>
+                @endforeach
+            </table>
+
+            <style>
+
+                @import url('https://fonts.googleapis.com/css2?family=Rubik+Beastly&display=swap');
+
+                table, th, td {
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 15px;
+                    border: 1px solid black;
+                    border-collapse: collapse;
+                    padding: 5px 25px;
+                }
+
+            </style>
+
+Prueba la API como (Ambas deben funcionar): 
+	http://example-app.test/recordings/Jesus Alejandro/2022
+	http://example-app.test/recordings/Jesus Alejandro
+
+Creamos una nueva ruta para crear registros:
+	(Nos movemos a la ruta /routes/web.php)
+	Creamos el metodo:
+            Route::get('/recordings-create', function () {
+                return view('pages.recordings-form');
+            });
+	(Nos movemos a la ruta /resources/views/pages/)
+	Creamos un el archivo recordings-form.blade.php:
+	    <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <meta http-equiv="X-UA-Compatible" content="ie=edge">
+                <title>Agregar Grabacion</title>
+            </head>
+            <body>
+                <form action="/video" method="POST" >
+                    <h1>Registra tu clase</h1>
+                    <label for="video">Selecciona tu video:</label> <br>
+                    <input type="file" id="video" name="video"> <br>
+
+                    <label for="class">
+                        <input id="class" type="text" placeholder="Clase" required> <br>
+                    </label>
+                    <label for="theme">
+                        <input id="theme" type="text" placeholder="Tema" required> <br>
+                    </label>
+                    <label for="duracion">
+                        <input id="duracion" type="text" placeholder="Duracion" required> <br>
+                    </label>
+                    <label for="size">
+                        <input id="size" type="text" placeholder="Tamaño del archivo" required> <br>
+                    </label>
+                    <button type="submit">Enviar</button> <br>
+                </form>
+
+                <style>
+
+                    form {
+                        width: 500px;
+                        padding: 20px;
+                        margin: auto;
+                        text-align: center;
+                    }
+
+                    input {
+                        width: 80%;
+                        margin: 5px;
+                        padding: 15px;
+                    }
+
+                    button {
+                        margin: 10px;
+                        padding: 5px;
+                        width: 50%;
+                        cursor: pointer;
+                    }
+
+                </style>
+
+            </body>
+            </html>
+
+Generamos la inserción de datos:
+	Borramos los archivos de /databases/migrations y ejecutamos:
+		php artisan migrate:rollback
+	Generamos un modelo, controlador y migracion para videos:
+		php artisan make:model Video -mcr
+	(Nos movemos a la migracion de videos en /databases/migrations)
+	Modificamos el metodo up:
+            public function up()
+            {
+                Schema::create('videos', function (Blueprint $table) {
+                    $table->id();
+                    $table->string('class', 100);
+                    $table->string('theme', 150);
+                    $table->string('duration', 50);
+                    $table->string('size', 100);
+                    $table->date('broadcast_date');
+                });
+            }
+	(Nos movemos al archivo app/Models/Videos.php)
+	Deshabilitamos el timestamp:                
+            class Video extends Model
+            {
+                use HasFactory;
+                public $timestamps = false;
+            }
+	(Nos movemos al archivo app/Http/Controllers/VideosController.php)
+	Debemos de tener importadas las sig. librerias:
+            use App\Models\Video;
+            use Illuminate\Http\Request;
+            use Illuminate\Support\Facades\DB;
+	Y modificada las funciones:
+            public function index()
+            {
+                $videos = Video::all();
+                return view('pages.recordings-index', compact('videos'));
+            }
+            public function create()
+            {
+                return view('pages.recordings-form');
+            }
+            public function store(Request $request)
+            {
+                $request->validate([
+                    'class' => 'required|min:5|max:150',
+                    'theme' => ['required', 'min:5'],
+                    'duration' => 'required|min:5|max:100',
+                    'size' => 'required|min:5|max:15',
+                ]);
+
+
+                $video = new Video();
+                $video->class = $request->class;
+                $video->theme = $request->theme;
+                $video->duration = $request->duration;
+                $video->size = $request->size;
+                $video->broadcast_date = now();
+                $video->save();
+
+                return redirect('/video');
+            }		
+	(Nos movemos a la ruta /routes/web.php)
+	Debemos de tener importadas las sig. librerias:
+            use App\Models\Video;
+            use Illuminate\Support\Facades\DB;
+            use Illuminate\Support\Facades\Route;
+            use App\Http\Controllers\VideoController;
+	Modificamos las rutas:
+            Route::get('/recordings/{name}/{year?}', function ($name, $year = null) {
+
+                if($year == null)
+                    $videos = Video::all();
+                else
+                    $videos = Video::whereYear('broadcast_date', $year)->get();
+
+                return view('pages.recordings', compact('name', 'year', 'videos'));
+            });
+
+            Route::resource('/video', VideoController::class);
+
+	(Nos movemos a la ruta /resources/views/pages/)
+	Creamos un el archivo recordings-index.blade.php:
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta http-equiv="X-UA-Compatible" content="IE=edge">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Videos</title>
+            </head>
+            <body>
+                <h1>Todas las Grabaciones</h1>
+                <h2>Clases subidas</h2>
+
+                <table class="table">
+                    <tr>
+                        <th>Registro</th>
+                        <th>Clase</th>
+                        <th>Tema</th>
+                        <th>Duracion</th>
+                        <th>Tamaño</th>
+                        <th>Emision</th>
+                    </tr>
+                    @foreach ($videos as $video)
+                        <tr>
+                            <td>{{ $video->id }}</td>
+                            <td>{{ $video->class }}</td>
+                            <td>{{ $video->theme }}</td>
+                            <td>{{ $video->duration }}</td>
+                            <td>{{ $video->size }}</td>
+                            <td>{{ $video->broadcast_date }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+
+                <style>
+
+                    @import url('https://fonts.googleapis.com/css2?family=Rubik+Beastly&display=swap');
+
+                    table, th, td {
+                        font-family: 'Bebas Neue', sans-serif;
+                        font-size: 15px;
+                        border: 1px solid black;
+                        border-collapse: collapse;
+                        padding: 5px 25px;
+                    }
+
+                </style>
+
+            </body>
+            </html>
+	
+	(Modificacmos el archivo recordings-form.blade.php)
+	Agregamos arriba del formulario:
+            <body>
+
+                @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul>
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
+	
+	Modificamos el formulario:
+                <form action="/video" method="POST" >
+
+                    @csrf
+                    <h1>Registra tu clase</h1>
+                    <label for="video">Selecciona tu video:</label> <br>
+                    <input type="file" id="video" name="video"> <br>
+
+                    <label for="class">
+                        <input id="class" name="class" type="text" placeholder="Clase" required> <br>
+                    </label>
+                    <label for="theme">
+                        <input id="theme" name="theme" type="text" placeholder="Tema" required> <br>
+                    </label>
+                    <label for="duracion">
+                        <input id="duracion" name='duration' type="text" placeholder="Duracion" required> <br>
+                    </label>
+                    <label for="size">
+                        <input id="size" name="size" type="text" placeholder="Tamaño del archivo" required> <br>
+                    </label>
+                    <button type="submit">Enviar</button>
+                </form>
+	Actualizamos cambios en la base (terminal):
+		php artisan migrate
+		php artisan db:seed
+	Probamos:
+		http://example-app.test/video/create
+
+
+Extras:
+	Ver las rutas:
+		php artisan route:list
+	Otra forma de hacer rutas de clases:
+		Route::get('/recordings-create', [VideoController::class, 'create']);
+		Route::post('/recordings-store', [VideoController::class, 'store']);	
+	Crea controlador en base a un modelo:
+		php artisan make:controller VideosController -r --model=Video
+	Crea un modelo simple:
+		php artisan make:model Video
+	
