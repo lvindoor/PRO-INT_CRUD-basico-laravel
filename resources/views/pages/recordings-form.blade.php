@@ -18,27 +18,36 @@
     </div>
     @endif
 
-    <form action="/video" method="POST" >
+    @isset($video)
+        <form action="/video/{{ $video->id }}" method="POST" > {{-- Editar --}}
+        @method('PATCH')
+    @else
+        <form action="/video" method="POST" > {{-- Crear --}}
+    @endisset
 
-        @csrf
-        <h1>Registra tu clase</h1>
-        <label for="video">Selecciona tu video:</label> <br>
-        <input type="file" id="video" name="video"> <br>
+            @csrf
+            <h1>Registra tu clase</h1>
+            <label for="video">Selecciona tu video:</label> <br>
+            <input type="file" id="video" name="video"> <br>
 
-         <label for="class">
-             <input id="class" name="class" type="text" placeholder="Clase" required> <br>
-          </label>
-         <label for="theme">
-             <input id="theme" name="theme" type="text" placeholder="Tema" required> <br>
-         </label>
-         <label for="duracion">
-             <input id="duracion" name='duration' type="text" placeholder="Duracion" required> <br>
-         </label>
-         <label for="size">
-            <input id="size" name="size" type="text" placeholder="Tamaño del archivo" required> <br>
-         </label>
-         <button type="submit">Enviar</button>
-     </form>
+            <label for="class">
+                <input id="class" name="class" type="text" placeholder="Clase"
+                value="{{ isset($video) ? $video->class : ''}}" required> <br>
+            </label>
+            <label for="theme">
+                <input id="theme" name="theme" type="text" placeholder="Tema"
+                value="{{ isset($video) ? $video->theme : ''}}" required> <br>
+            </label>
+            <label for="duracion">
+                <input id="duracion" name='duration' type="text" placeholder="Duracion"
+                value="{{ isset($video) ? $video->duration : ''}}" required> <br>
+            </label>
+            <label for="size">
+                <input id="size" name="size" type="text" placeholder="Tamaño del archivo"
+                value="{{ isset($video) ? $video->size : ''}}" required> <br>
+            </label>
+            <button type="submit">Enviar</button>
+        </form>
 
      <style>
 

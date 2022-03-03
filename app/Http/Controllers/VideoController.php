@@ -64,7 +64,7 @@ class VideoController extends Controller
      */
     public function show(Video $video)
     {
-        //
+        return view('pages.show-recordings', compact('video'));
     }
 
     /**
@@ -75,7 +75,7 @@ class VideoController extends Controller
      */
     public function edit(Video $video)
     {
-        //
+        return view('pages.recordings-form', compact('video'));
     }
 
     /**
@@ -87,7 +87,21 @@ class VideoController extends Controller
      */
     public function update(Request $request, Video $video)
     {
-        //
+        $request->validate([
+            'class' => 'required|min:5|max:150',
+            'theme' => ['required', 'min:5'],
+            'duration' => 'required|min:5|max:100',
+            'size' => 'required|min:5|max:15',
+        ]);
+
+        $video->class = $request->class;
+        $video->theme = $request->theme;
+        $video->duration = $request->duration;
+        $video->size = $request->size;
+        $video->broadcast_date = now();
+        $video->save();
+
+        return redirect('/video');
     }
 
     /**
@@ -98,6 +112,7 @@ class VideoController extends Controller
      */
     public function destroy(Video $video)
     {
-        //
+        $video->delete();
+        return redirect('/video');
     }
 }

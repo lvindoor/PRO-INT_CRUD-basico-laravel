@@ -16,6 +16,8 @@
         @endif
     </h2>
 
+    <p> <a href="video/create"> Subir Clase </a> </p>
+
     <table class="table">
         <tr>
             <th>Registro</th>
@@ -24,6 +26,7 @@
             <th>Duracion</th>
             <th>Tamaño</th>
             <th>Emision</th>
+            <th>Acciones</th>
         </tr>
         @foreach ($videos as $video)
             <tr>
@@ -33,6 +36,15 @@
                 <td>{{ $video->duration }}</td>
                 <td>{{ $video->size }}</td>
                 <td>{{ $video->broadcast_date }}</td>
+                <td>
+                    <a href="video/{{$video->id}}"> Ver detalles </a>
+                    <a href="video/{{$video->id}}/edit"> Editar </a>
+                    <form action="video/{{$video->id}}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <input type="submit" value="Borrar">
+                    </form>
+                </td>
             </tr>
         @endforeach
     </table>
