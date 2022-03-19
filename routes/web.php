@@ -32,3 +32,7 @@ Route::get('/recordings/{name}/{year?}', function ($name, $year = null) {
 });
 
 Route::resource('/video', VideoController::class);
+
+Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
+    return view('dashboard');
+})->name('dashboard');
