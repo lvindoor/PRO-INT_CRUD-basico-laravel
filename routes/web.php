@@ -21,6 +21,14 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/home', function () {
+    return view('home');
+});
+
+Route::get('/contact', function () {
+    return view('contact');
+});
+
 Route::get('/recordings/{name}/{year?}', function ($name, $year = null) {
 
     if($year == null)
